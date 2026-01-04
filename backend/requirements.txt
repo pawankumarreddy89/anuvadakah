@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+requests
+torch
+transformers
+pdfplumber
+reportlab
+python-docx
+gTTS
+pytesseract
+Pillow
