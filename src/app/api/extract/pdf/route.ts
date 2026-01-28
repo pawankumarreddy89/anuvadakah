@@ -1,35 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-/**
- * PDF Extraction API Route
- * Uses dynamic import to bypass Turbopack ESM default export issue
- * EXACT FIX: await import('pdf-parse') bypasses static analysis
- * Last updated: ${new Date().toISOString()} - Force Vercel rebuild
- */
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
+    console.log('PDF extraction: Starting with pdf-parse via dynamic import');
 
-    // Dynamic import to bypass Turbopack's static analysis
+    // 1. Dynamically import module to bypass Turbopack static analysis
     const pdfModule = await import('pdf-parse');
-    const pdf = pdfModule.default || pdfModule;
 
-    const result = await extractPDF(formData, pdf);
+    // 2. Safely extract main function (default or named)
+    const pdfParse = pdfModule.default || pdfModule;
 
-    if (!result.success) {
+    // 3. Parse form data
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
+
+    if (!file) {
+      console.error('PDF extraction: No file provided');
       return NextResponse.json(
-        { error: result.error, details: result.details },
+        { error: 'No file provided' },
+        { status: 400 }
+      );
+    }
+
+    // Check if file is PDF
+    if (file.type !== 'application/pdf') {
+      console.error('PDF extraction: Invalid file type:', file.type);
+      return NextResponse.json(
+        { error: 'Only PDF files are supported' },
+        { status: 400 }
+      );
+    }
+
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      console.error('PDF extraction: File too large:', file.size);
+      return NextResponse.json(
+        { error: 'File size exceeds 10MB limit' },
+        { status: 400 }
+      );
+    }
+
+    // Read file as buffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    console.log('PDF extraction: File size:', bytes.length, 'bytes');
+
+    // 4. Extract text using pdfParse function
+    const data = await pdfParse(buffer);
+    const extractedText = data.text.trim();
+
+    console.log('PDF extraction: Extracted', extractedText.length, 'characters from', data.numpages, 'pages');
+
+    if (!extractedText) {
+      console.error('PDF extraction: No text could be extracted');
+      return NextResponse.json(
+        { error: 'No text could be extracted from PDF' },
         { status: 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      text: result.text,
-      pageCount: result.pageCount,
+      text: extractedText,
+      pageCount: data.numpages,
     });
   } catch (error) {
-    console.error('PDF route error:', error);
+    console.error('PDF extraction error:', error);
     return NextResponse.json(
       {
         error: 'Failed to extract text from PDF',
