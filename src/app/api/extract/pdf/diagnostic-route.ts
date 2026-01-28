@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-/**
- * PDF Extraction API Route
- * Uses comprehensive diagnostic logging to identify runtime failures
- */
 export async function POST(req: NextRequest) {
   // ============================================================
   // 🚨 PHASE 1 DIAGNOSTIC: ENTRY POINT
