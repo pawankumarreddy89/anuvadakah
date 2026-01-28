@@ -1,5 +1,7 @@
 'use server';
 
+// Server action for PDF text extraction
+// Uses CommonJS require() for Turbopack compatibility with pdf-parse
 const pdfParse = require('pdf-parse');
 
 export async function extractPDF(formData: FormData) {
