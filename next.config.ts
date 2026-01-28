@@ -19,12 +19,6 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-  // Force Vercel to use latest code
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000'],
-    },
-  },
 };
 
 export default nextConfig;
