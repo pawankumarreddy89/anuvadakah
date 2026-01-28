@@ -1,5 +1,11 @@
 'use server';
 
+/**
+ * Production-safe PDF extraction using CJS wrapper
+ * Bypasses Turbopack ESM resolution issues in Vercel deployment
+ */
+import { parsePDF } from '@/lib/pdf-parse-wrapper';
+
 export async function extractPDF(formData: FormData) {
   try {
     const file = formData.get('file') as File;
@@ -34,9 +40,8 @@ export async function extractPDF(formData: FormData) {
 
     console.log('PDF extraction: File size:', bytes.length, 'bytes');
 
-    // Dynamically import pdf-parse at runtime to avoid build-time issues
-    const pdfParse = (await import('pdf-parse')).default;
-    const data = await pdfParse(buffer);
+    // Extract text using production-safe wrapper
+    const data = await parsePDF(buffer);
     const extractedText = data.text.trim();
 
     console.log('PDF extraction: Extracted', extractedText.length, 'characters from', data.numpages, 'pages');
