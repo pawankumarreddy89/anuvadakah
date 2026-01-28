@@ -1,6 +1,6 @@
 'use server';
 
-import pdf from 'pdf-parse';
+const pdfParse = require('pdf-parse');
 
 export async function extractPDF(formData: FormData) {
   try {
@@ -37,7 +37,7 @@ export async function extractPDF(formData: FormData) {
     console.log('PDF extraction: File size:', bytes.length, 'bytes');
 
     // Extract text from PDF using pdf-parse
-    const data = await pdf(buffer);
+    const data = await pdfParse(buffer);
     const extractedText = data.text.trim();
 
     console.log('PDF extraction: Extracted', extractedText.length, 'characters from', data.numpages, 'pages');
