@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractPDF } from '@/app/_actions/extract-pdf';
 
 /**
  * PDF Extraction API Route
- * Uses PDFParse wrapper to bypass Turbopack ESM resolution issues
- * Last updated: Force cache invalidation
+ * Uses dynamic import to bypass Turbopack ESM default export issue
+ * EXACT FIX: await import('pdf-parse') bypasses static analysis
  */
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const result = await extractPDF(formData);
+
+    // Dynamic import to bypass Turbopack's static analysis
+    const pdfModule = await import('pdf-parse');
+    const pdf = pdfModule.default || pdfModule;
+
+    const result = await extractPDF(formData, pdf);
 
     if (!result.success) {
       return NextResponse.json(
