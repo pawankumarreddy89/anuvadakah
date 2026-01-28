@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractPDF } from '@/app/_actions/extract-pdf';
 
+/**
+ * PDF Extraction API Route
+ * Uses PDFParse wrapper to bypass Turbopack ESM resolution issues
+ * Last updated: Force cache invalidation
+ */
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
