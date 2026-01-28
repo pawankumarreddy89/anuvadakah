@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * PDF Extraction API Route
  * Uses dynamic import to bypass Turbopack ESM default export issue
  * EXACT FIX: await import('pdf-parse') bypasses static analysis
- * Last updated: Force Vercel to use latest code
+ * Last updated: ${new Date().toISOString()} - Force Vercel rebuild
  */
 export async function POST(req: NextRequest) {
   try {
