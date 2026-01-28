@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import pdf from 'pdf-parse';
 
 export async function POST(req: NextRequest) {
-  console.log('PDF extraction: Starting new clean implementation');
+  console.log('PDF extraction: Starting with pdf-parse (no fallback)');
   
   try {
     const formData = await req.formData();
@@ -40,54 +41,23 @@ export async function POST(req: NextRequest) {
 
     console.log('PDF extraction: File size:', bytes.length, 'bytes');
 
-    // Import pdf-parse using dynamic import to avoid CommonJS issues
-    const pdfParse = (await import('pdf-parse')).default;
-
-    // Extract text from PDF
-    const data = await pdfParse(buffer);
+    // Extract text from PDF using pdf-parse (CommonJS default export)
+    const data = await pdf(buffer);
     const extractedText = data.text.trim();
 
-    console.log('PDF extraction: Raw extracted text length:', extractedText.length);
+    console.log('PDF extraction: Extracted', extractedText.length, 'characters from', data.numpages, 'pages');
 
-    if (!extractedText || extractedText.length === 0) {
+    if (!extractedText) {
       console.error('PDF extraction: No text could be extracted');
       return NextResponse.json(
-        { error: 'No text could be extracted from PDF. The document may be image-only, password-protected, or corrupted.' },
-        { status: 400 }
-      );
-    }
-
-    // Filter out common PDF garbage artifacts
-    const cleanedText = extractedText
-      // Remove control characters (except common ones)
-      .replace(/[\x00-\x08]/g, '') // Basic Latin-1 Supplement, Block Elements
-      // Remove extended ASCII artifacts
-      .replace(/[\x80-\x9F]/g, '') // Latin Extended, Greek, Cyrillic
-      // Replace multiple consecutive whitespace with single space
-      .replace(/[ \t\r\n]+/g, ' ')
-      // Remove common PDF encoding artifacts and special characters
-      .replace(/[\u2000-\u200F]/g, '') // General Punctuation, Currency, Symbols
-      .replace(/[\u2028-\u202F]/g, '') // General Punctuation
-      .replace(/[\u2060-\u206F]/g, '') // Symbols
-      .replace(/[\uFFF0-\uFFEF]/g, '') // Special characters
-      .replace(/[\uFE10-\uFE1F\uFE30-\uFE4F]/g, '') // Specials, Symbols
-      // Remove non-ASCII printable characters that aren't common text
-      .replace(/[^\x20-\x7E\r\n\t.,!?;:'"()\-]+/g, '')
-      .trim();
-
-    console.log('PDF extraction: Final cleaned text length:', cleanedText.length);
-
-    if (cleanedText.length === 0) {
-      console.error('PDF extraction: Text became empty after cleaning');
-      return NextResponse.json(
-        { error: 'Could not extract readable text from PDF. The document may contain only images or be password-protected.' },
+        { error: 'No text could be extracted from PDF' },
         { status: 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      text: cleanedText,
+      text: extractedText,
       pageCount: data.numpages,
     });
 
