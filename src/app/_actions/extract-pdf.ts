@@ -1,10 +1,6 @@
 'use server';
 
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Configure pdfjs-dist to work with Next.js and avoid worker issues
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-pdfjsLib.GlobalWorkerOptions.workerPort = null;
+import pdf from 'pdf-parse';
 
 export async function extractPDF(formData: FormData) {
   try {
@@ -34,37 +30,17 @@ export async function extractPDF(formData: FormData) {
       };
     }
 
-    // Read file as array buffer
-    const arrayBuffer = await file.arrayBuffer();
+    // Read file as buffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
-    console.log('PDF extraction: File size:', arrayBuffer.length, 'bytes');
+    console.log('PDF extraction: File size:', bytes.length, 'bytes');
 
-    // Load PDF document without worker
-    const loadingTask = pdfjsLib.getDocument({
-      data: arrayBuffer,
-      useWorkerFetch: false,
-      isEvalSupported: false,
-    });
+    // Extract text from PDF using pdf-parse
+    const data = await pdf(buffer);
+    const extractedText = data.text.trim();
 
-    const pdf = await loadingTask.promise;
-
-    console.log('PDF extraction: Loaded', pdf.numPages, 'pages');
-
-    // Extract text from all pages
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ')
-        .trim();
-      fullText += pageText + '\n';
-    }
-
-    const extractedText = fullText.trim();
-
-    console.log('PDF extraction: Extracted', extractedText.length, 'characters');
+    console.log('PDF extraction: Extracted', extractedText.length, 'characters from', data.numpages, 'pages');
 
     if (!extractedText) {
       return {
@@ -76,7 +52,7 @@ export async function extractPDF(formData: FormData) {
     return {
       success: true,
       text: extractedText,
-      pageCount: pdf.numPages,
+      pageCount: data.numpages,
     };
   } catch (error) {
     console.error('PDF extraction error:', error);
