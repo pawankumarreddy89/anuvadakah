@@ -1,9 +1,5 @@
 'use server';
 
-// Server action for PDF text extraction
-// Uses CommonJS require() for Turbopack compatibility with pdf-parse
-const pdfParse = require('pdf-parse');
-
 export async function extractPDF(formData: FormData) {
   try {
     const file = formData.get('file') as File;
@@ -38,7 +34,8 @@ export async function extractPDF(formData: FormData) {
 
     console.log('PDF extraction: File size:', bytes.length, 'bytes');
 
-    // Extract text from PDF using pdf-parse
+    // Dynamically import pdf-parse at runtime to avoid build-time issues
+    const pdfParse = (await import('pdf-parse')).default;
     const data = await pdfParse(buffer);
     const extractedText = data.text.trim();
 
